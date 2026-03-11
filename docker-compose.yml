@@ -1,0 +1,156 @@
+version: "3.9"
+
+name: honey_multiservice
+
+services:
+  cowrie:
+    image: cowrie/cowrie:latest
+    container_name: hp_cowrie
+    restart: unless-stopped
+    ports:
+      - "${COWRIE_SSH_PORT:-2222}:2222"
+      - "${COWRIE_TELNET_PORT:-2223}:2223"
+    volumes:
+      - ./data/cowrie/var:/cowrie/cowrie-git/var
+      - ./data/cowrie/etc:/cowrie/cowrie-git/etc
+      - ./data/cowrie/logs:/cowrie/cowrie-git/log
+    networks:
+      - honeynet_net
+      - log_net
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    pids_limit: 256
+    cpus: "1.0"
+    mem_limit: 512m
+
+  dionaea:
+    image: dinotools/dionaea:latest
+    container_name: hp_dionaea
+    restart: unless-stopped
+    ports:
+      - "21:21"
+      - "69:69/udp"
+      - "80:80"
+      - "135:135"
+      - "445:445"
+      - "1433:1433"
+      - "1723:1723"
+      - "3306:3306"
+      - "5060:5060"
+    volumes:
+      - ./data/dionaea/logs:/opt/dionaea/var/log
+      - ./data/dionaea/downloads:/opt/dionaea/var/dionaea/binaries
+    networks:
+      - honeynet_net
+      - log_net
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    cpus: "1.0"
+    mem_limit: 768m
+
+  elasticpot:
+    image: ghcr.io/jordan-wright/elastichoney:latest
+    container_name: hp_elasticpot
+    restart: unless-stopped
+    command: ["-listen", "0.0.0.0:9200", "-logfile", "/var/log/elastichoney/elasticpot.log"]
+    ports:
+      - "${ELASTICPOT_PORT:-9200}:9200"
+    volumes:
+      - ./data/elasticpot/logs:/var/log/elastichoney
+    networks:
+      - honeynet_net
+      - log_net
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    pids_limit: 128
+    cpus: "0.50"
+    mem_limit: 256m
+
+  mailoney:
+    image: dinotools/mailoney:latest
+    container_name: hp_mailoney
+    restart: unless-stopped
+    ports:
+      - "${MAILONEY_SMTP_PORT:-25}:25"
+    volumes:
+      - ./data/mailoney/logs:/var/log/mailoney
+    networks:
+      - honeynet_net
+      - log_net
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    cpus: "0.50"
+    mem_limit: 256m
+
+  conpot:
+    image: ghcr.io/mushorg/conpot:latest
+    container_name: hp_conpot
+    restart: unless-stopped
+    ports:
+      - "102:102"
+      - "16100:16100/udp"
+      - "502:502"
+      - "44818:44818"
+    volumes:
+      - ./data/conpot/logs:/data/logs
+      - ./data/conpot/configs:/data/config
+    networks:
+      - honeynet_net
+      - log_net
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    cpus: "1.0"
+    mem_limit: 512m
+
+  webtrap:
+    build:
+      context: ./services/webtrap
+    container_name: hp_webtrap
+    restart: unless-stopped
+    environment:
+      WEBTRAP_LOG_DIR: /data/logs
+      WEBTRAP_ENABLE_HTTPS: "true"
+      WEBTRAP_HTTP_PORT: 8080
+      WEBTRAP_HTTPS_PORT: 8443
+    ports:
+      - "${WEBTRAP_HTTP_PORT:-8088}:8080"
+      - "${WEBTRAP_HTTPS_PORT:-8443}:8443"
+    volumes:
+      - ./data/webtrap/logs:/data/logs
+    networks:
+      - honeynet_net
+      - log_net
+      - mgmt_net
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: ["ALL"]
+    pids_limit: 128
+    cpus: "0.50"
+    mem_limit: 256m
+
+networks:
+  honeynet_net:
+    driver: bridge
+    name: honeynet_net
+  log_net:
+    driver: bridge
+    internal: true
+    name: log_net
+  mgmt_net:
+    driver: bridge
+    internal: true
+    name: mgmt_net

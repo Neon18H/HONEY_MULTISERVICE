@@ -1,0 +1,9 @@
+.env
+**/__pycache__/
+**/*.pyc
+
+# Runtime honeypot evidence/logs (keep folder structure via .gitkeep)
+data/**/logs/*
+data/**/downloads/*
+!data/**/logs/.gitkeep
+!data/**/downloads/.gitkeep

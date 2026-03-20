@@ -7,8 +7,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
-RUN mkdir -p /data/logs && chown -R elasticpot:elasticpot /data
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh && mkdir -p /data/logs
 
-USER elasticpot
 EXPOSE 9200
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["python", "app.py"]

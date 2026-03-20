@@ -46,10 +46,10 @@ Desplegar servicios honeypot en contenedores aislados con:
 
 ### 2.3 Elastic honeypot (`hp_elasticpot`)
 - Requisito original: ElasticPot.
-- Decisión técnica: usar **Elastichoney** (`ghcr.io/jordan-wright/elastichoney`) como alternativa razonable y más mantenible para emulación de API Elasticsearch expuesta.
+- Decisión técnica: usar **ElasticPot local** (implementación mínima en Flask dentro de `services/elasticpot`) para evitar dependencia de imágenes GHCR con pull anónimo inestable y mantener trazabilidad del código.
 - Puerto publicado: `9200 -> 9200/tcp`.
 - Persistencia:
-  - `./data/elasticpot/logs/elasticpot.log`
+  - `./data/elasticpot/logs/elasticpot.jsonl`
 
 ### 2.4 Mailoney (`hp_mailoney`)
 - Rol: SMTP honeypot.
@@ -90,6 +90,10 @@ HONEY_MULTISERVICE/
 ├── .env.example
 ├── README.md
 ├── services/
+│   ├── elasticpot/
+│   │   ├── Dockerfile
+│   │   ├── app.py
+│   │   └── requirements.txt
 │   └── webtrap/
 │       ├── Dockerfile
 │       ├── app.py
@@ -137,7 +141,7 @@ nano .env
 ## 4.3 Levantar stack
 ```bash
 docker compose pull
-docker compose build webtrap
+docker compose build
 docker compose up -d
 ```
 

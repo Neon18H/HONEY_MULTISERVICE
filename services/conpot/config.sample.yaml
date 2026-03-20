@@ -1,0 +1,10 @@
+plant:
+  site: honeynet-lab
+  process: water_pumping_station
+assets:
+  plc:
+    vendor: Siemens
+    model: S7-300
+  hmi:
+    vendor: Generic
+    model: PanelView

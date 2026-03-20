@@ -52,19 +52,19 @@ Desplegar servicios honeypot en contenedores aislados con:
   - `./data/elasticpot/logs/elasticpot.jsonl`
 
 ### 2.4 Mailoney (`hp_mailoney`)
-- Rol: SMTP honeypot.
-- Captura: abuso SMTP, relay attempts, enumeración y harvesting.
-- Puerto publicado: `25 -> 25/tcp`.
+- Rol: SMTP honeypot local (implementación propia) para no depender de imágenes remotas frágiles.
+- Captura: banner SMTP, comandos, intentos de relay y payload en `DATA`.
+- Puerto publicado: `25 -> 2525/tcp` (host:contenedor, para evitar privilegios root en el contenedor).
 - Persistencia:
   - `./data/mailoney/logs`
 
 ### 2.5 Conpot (`hp_conpot`)
-- Rol: honeypot ICS/OT.
-- Superficie ICS publicada (según soporte de imagen):
-  - `102/tcp` (S7Comm)
-  - `502/tcp` (Modbus)
-  - `16100/udp` (SNMP emulado en configuración de imagen)
-  - `44818/tcp` (EtherNet/IP)
+- Rol: honeypot ICS/OT local pragmático (alternativa lightweight).
+- Superficie ICS publicada:
+  - `102 -> 1102/tcp` (S7-like handshake)
+  - `502 -> 1502/tcp` (Modbus-like respuesta)
+  - `16100/udp` (SNMP-like logging)
+  - `44818/tcp` (EtherNet/IP-like respuesta)
 - Persistencia:
   - `./data/conpot/logs`
   - `./data/conpot/configs`
@@ -94,6 +94,15 @@ HONEY_MULTISERVICE/
 │   │   ├── Dockerfile
 │   │   ├── app.py
 │   │   └── requirements.txt
+│   ├── mailoney/
+│   │   ├── Dockerfile
+│   │   ├── app.py
+│   │   └── entrypoint.sh
+│   ├── conpot/
+│   │   ├── Dockerfile
+│   │   ├── app.py
+│   │   ├── entrypoint.sh
+│   │   └── config.sample.yaml
 │   └── webtrap/
 │       ├── Dockerfile
 │       ├── app.py

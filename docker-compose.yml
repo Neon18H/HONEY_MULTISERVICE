@@ -54,6 +54,11 @@ services:
     networks:
       - honeynet_net
       - log_net
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    pids_limit: 256
     cpus: "1.0"
     mem_limit: 768m
 
@@ -90,36 +95,73 @@ services:
 
   mailoney:
     <<: *honeypot_defaults
-    image: dinotools/mailoney:latest
+    build:
+      context: ./services/mailoney
+    image: honey/mailoney:local
     container_name: hp_mailoney
     ports:
-      - "${MAILONEY_SMTP_PORT:-25}:25/tcp"
+      - "${MAILONEY_SMTP_PORT:-25}:2525/tcp"
+    environment:
+      MAILONEY_LOG_DIR: /data/logs
+      MAILONEY_PORT: 2525
     volumes:
-      - ./data/mailoney/logs:/var/log/mailoney
+      - ./data/mailoney/logs:/data/logs
     networks:
       - honeynet_net
       - log_net
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    cap_drop:
+      - ALL
     pids_limit: 128
     cpus: "0.50"
     mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',2525),3); s.close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
   conpot:
     <<: *honeypot_defaults
-    image: ghcr.io/mushorg/conpot:latest
+    build:
+      context: ./services/conpot
+    image: honey/conpot:local
     container_name: hp_conpot
     ports:
-      - "102:102/tcp"
-      - "502:502/tcp"
+      - "102:1102/tcp"
+      - "502:1502/tcp"
       - "16100:16100/udp"
       - "44818:44818/tcp"
+    environment:
+      CONPOT_LOG_DIR: /data/logs
+      CONPOT_CONFIG_DIR: /data/configs
+      CONPOT_S7_PORT: 1102
+      CONPOT_MODBUS_PORT: 1502
+      CONPOT_SNMP_PORT: 16100
+      CONPOT_ENIP_PORT: 44818
     volumes:
       - ./data/conpot/logs:/data/logs
-      - ./data/conpot/configs:/data/config
+      - ./data/conpot/configs:/data/configs
     networks:
       - honeynet_net
       - log_net
-    cpus: "1.0"
-    mem_limit: 512m
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m
+    cap_drop:
+      - ALL
+    pids_limit: 128
+    cpus: "0.75"
+    mem_limit: 384m
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',44818),3); s.close()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
   webtrap:
     <<: *honeypot_defaults

@@ -38,11 +38,14 @@ Desplegar servicios honeypot en contenedores aislados con:
   - `./data/cowrie/logs`
 
 ### 2.2 Dionaea (`hp_dionaea`)
-- Rol: captura malware/payloads y explotación de servicios emulados.
+- Rol: servicio **local y propio** (Python/asyncio), dionaea-like lightweight para captura de reconocimiento, banners y payload inicial.
 - Puertos publicados (laboratorio mínimo): `21`, `69/udp`, `80`, `135`, `445`, `1433`, `1723`, `3306`, `5060`.
 - Persistencia:
-  - `./data/dionaea/logs`
-  - `./data/dionaea/downloads`
+  - `./data/dionaea/logs/events.jsonl`
+- Diseño:
+  - Emulación mínima modular por protocolo en `services/dionaea/protocols/*`.
+  - Registro unificado JSONL con campos normalizados para análisis posterior.
+  - Sin binarios externos ni dependencias pesadas.
 
 ### 2.3 Elastic honeypot (`hp_elasticpot`)
 - Requisito original: ElasticPot.
@@ -94,6 +97,23 @@ HONEY_MULTISERVICE/
 │   │   ├── Dockerfile
 │   │   ├── app.py
 │   │   └── requirements.txt
+│   ├── dionaea/
+│   │   ├── Dockerfile
+│   │   ├── app.py
+│   │   ├── requirements.txt
+│   │   ├── protocols/
+│   │   │   ├── ftp.py
+│   │   │   ├── http.py
+│   │   │   ├── mssql.py
+│   │   │   ├── mysql.py
+│   │   │   ├── pptp.py
+│   │   │   ├── rpc.py
+│   │   │   ├── sip.py
+│   │   │   ├── smb.py
+│   │   │   └── tftp.py
+│   │   └── utils/
+│   │       ├── logger.py
+│   │       └── server.py
 │   ├── mailoney/
 │   │   ├── Dockerfile
 │   │   ├── app.py
@@ -109,7 +129,7 @@ HONEY_MULTISERVICE/
 │       └── requirements.txt
 └── data/
     ├── cowrie/{etc,logs,var}
-    ├── dionaea/{downloads,logs}
+    ├── dionaea/logs
     ├── elasticpot/logs
     ├── mailoney/logs
     ├── conpot/{configs,logs}
@@ -279,7 +299,7 @@ nmap -sV -Pn <IP_VPS1> -p 25,80,102,445,502,9200,2222,2223,8088,8443
 ```bash
 # Logs por servicio
 ls -lah data/cowrie/logs
-ls -lah data/dionaea/logs data/dionaea/downloads
+ls -lah data/dionaea/logs
 ls -lah data/elasticpot/logs
 ls -lah data/mailoney/logs
 ls -lah data/conpot/logs
@@ -288,6 +308,15 @@ ls -lah data/webtrap/logs
 # Evento webtrap
 tail -n 20 data/webtrap/logs/requests.jsonl
 tail -n 20 data/webtrap/logs/alerts.jsonl
+tail -n 20 data/dionaea/logs/events.jsonl
+```
+
+### Conflictos de puertos a considerar
+El servicio `dionaea` publica puertos típicamente usados por servicios reales (`21`, `80`, `445`, `3306`, etc.).  
+Si el host ya tiene alguno ocupado, Docker no podrá iniciar ese binding. Verifica antes con:
+
+```bash
+ss -tulpen | egrep ':21|:69|:80|:135|:445|:1433|:1723|:3306|:5060'
 ```
 
 ---

@@ -34,22 +34,22 @@ services:
 
   dionaea:
     <<: *honeypot_defaults
-    image: dinotools/dionaea:latest
+    build:
+      context: ./services/dionaea
+    image: honey/dionaea:local
     container_name: hp_dionaea
-    user: "0:0"
     ports:
-      - "21:21/tcp"
+      - "21:21"
       - "69:69/udp"
-      - "80:80/tcp"
-      - "135:135/tcp"
-      - "445:445/tcp"
-      - "1433:1433/tcp"
-      - "1723:1723/tcp"
-      - "3306:3306/tcp"
-      - "5060:5060/tcp"
+      - "80:80"
+      - "135:135"
+      - "445:445"
+      - "1433:1433"
+      - "1723:1723"
+      - "3306:3306"
+      - "5060:5060"
     volumes:
-      - ./data/dionaea/logs:/opt/dionaea/var/log/dionaea
-      - ./data/dionaea/downloads:/opt/dionaea/var/lib/dionaea/binaries
+      - ./data/dionaea/logs:/app/logs
     networks:
       - honeynet_net
       - log_net
